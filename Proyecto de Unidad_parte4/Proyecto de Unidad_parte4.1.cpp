@@ -215,6 +215,41 @@ void dibujarFigura(const Figura &f) {
     }
 }
 
-// Func para redibujar todo el contenido
-void redibujar
+void redibujarTodo() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    if (mostrarCuadricula) {
+        glColor3f(0.85f, 0.85f, 0.85f);
+        glBegin(GL_LINES);
+        for (int x = 0; x <= anchoVista; x += 20) {
+            glVertex2i(x, 0);
+            glVertex2i(x, altoVista);
+        }
+        for (int y = 0; y <= altoVista; y += 20) {
+            glVertex2i(0, y);
+            glVertex2i(anchoVista, y);
+        }
+        glEnd();
+    }
+
+    if (mostrarEjes) {
+        glColor3f(0.6f, 0.6f, 0.6f);
+        glBegin(GL_LINES);
+        // Eje horizontal
+        glVertex2i(0, altoVista / 2);
+        glVertex2i(anchoVista, altoVista / 2);
+        // Eje vertical
+        glVertex2i(anchoVista / 2, 0);
+        glVertex2i(anchoVista / 2, altoVista);
+        glEnd();
+    }
+
+    // Dibujar todas las figuras almacenadas
+    for (const auto &fig : figuras) {
+        dibujarFigura(fig);
+    }
+
+    glutSwapBuffers();
+}
+
 

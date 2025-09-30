@@ -379,7 +379,7 @@ int main(int argc, char** argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(ANCHO_VENTANA, ALTO_VENTANA);
-    glutCreateWindow("Mini CAD Raster");
+    glutCreateWindow("Proyecto de unidad - DMV");
     inicializarGL();
     crearMenus();
     glutDisplayFunc(mostrar);
@@ -388,4 +388,5 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
+
 

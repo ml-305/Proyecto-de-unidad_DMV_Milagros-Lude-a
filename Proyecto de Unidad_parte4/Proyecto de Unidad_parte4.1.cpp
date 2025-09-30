@@ -10,7 +10,7 @@ using namespace std;
 const int ANCHO_VENTANA = 800;
 const int ALTO_VENTANA = 600;
 
-// Tipos de herramientas disponibles
+// Tipos de dibujo disponibles
 enum Herramienta {
     HERRAMIENTA_LINEA_DIRECTA,
     HERRAMIENTA_LINEA_DDA,
@@ -19,17 +19,17 @@ enum Herramienta {
     HERRAMIENTA_NINGUNA
 };
 
-// Estructura para representar un color RGB
+// Color RGB
 struct ColorRGB {
     float r, g, b;
 };
 
-// Estructura para representar figuras geométricas
+// Estructura para figuras geométricas
 struct Figura {
     Herramienta tipoHerramienta;
-    // Lineas: puntos inicio-fin
+    // Líneas: puntos inicio-fin
     int xInicio, yInicio, xFin, yFin;
-    // Circulo: centro y radio
+    // Círculo: centro y radio
     int centroX, centroY, radio;
     // Elipse: radios horizontal y vertical
     int radioX, radioY;
@@ -38,8 +38,8 @@ struct Figura {
 };
 
 vector<Figura> figuras;
-stack<vector<Figura>> pilaUndo;
-stack<vector<Figura>> pilaRedo;
+stack<vector<Figura>> pilaDeshacer;
+stack<vector<Figura>> pilaRehacer;
 
 // Estado actual
 Herramienta herramientaActual = HERRAMIENTA_LINEA_DIRECTA;
@@ -47,46 +47,46 @@ ColorRGB colorActual = {0.f, 0.f, 0.f};
 int grosorActual = 1;
 bool mostrarCuadricula = true;
 bool mostrarEjes = true;
-bool esperandoSegundoClic = false;
+bool esperandoSegundoClick = false;
 int primerX = 0;
 int primerY = 0;
-int anchoVista = ANCHO_VENTANA;
-int altoVista = ALTO_VENTANA;
+int anchoViewport = ANCHO_VENTANA;
+int altoViewport = ALTO_VENTANA;
 
 inline int redondearAEntero(float v) {
     return (int) floor(v + 0.5f);
 }
 
-// Gest de Undo/Redo
-void apilarUndo() {
-    pilaUndo.push(figuras);
-    while (!pilaRedo.empty()) pilaRedo.pop();
+// Gestión Deshacer/Rehacer
+void guardarParaDeshacer() {
+    pilaDeshacer.push(figuras);
+    while (!pilaRehacer.empty()) pilaRehacer.pop();
 }
 
 void deshacer() {
-    if (!pilaUndo.empty()) {
-        pilaRedo.push(figuras);
-        figuras = pilaUndo.top();
-        pilaUndo.pop();
+    if (!pilaDeshacer.empty()) {
+        pilaRehacer.push(figuras);
+        figuras = pilaDeshacer.top();
+        pilaDeshacer.pop();
         glutPostRedisplay();
     }
 }
 
 void rehacer() {
-    if (!pilaRedo.empty()) {
-        pilaUndo.push(figuras);
-        figuras = pilaRedo.top();
-        pilaRedo.pop();
+    if (!pilaRehacer.empty()) {
+        pilaDeshacer.push(figuras);
+        figuras = pilaRehacer.top();
+        pilaRehacer.pop();
         glutPostRedisplay();
     }
 }
 
-// Func para dibujar un punto en (x, y)
+// Dibujar punto en (x,y)
 void dibujarPunto(int x, int y) {
     glVertex2i(x, y);
 }
 
-// Algoritmos de linea directa y DDA
+// Algoritmos línea directa y DDA
 void dibujarLineaDirecta(int x0, int y0, int x1, int y1, int grosor) {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -124,7 +124,7 @@ void dibujarLineaDDA(int x0, int y0, int x1, int y1, int grosor) {
     glEnd();
 }
 
-// Algoritmo de Círculo y Elipse con el método del punto medio
+// Círculo y Elipse punto medio
 void dibujarPuntosCirculo(int cx, int cy, int x, int y) {
     dibujarPunto(cx + x, cy + y);
     dibujarPunto(cx - x, cy + y);
@@ -194,7 +194,6 @@ void dibujarElipsePuntoMedio(int cx, int cy, int rx, int ry, int grosor) {
     glEnd();
 }
 
-// Func para dibujar la figura completa
 void dibujarFigura(const Figura &f) {
     glColor3f(f.color.r, f.color.g, f.color.b);
     switch (f.tipoHerramienta) {
@@ -218,38 +217,180 @@ void dibujarFigura(const Figura &f) {
 void redibujarTodo() {
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Dibujar cuadrícula
     if (mostrarCuadricula) {
         glColor3f(0.85f, 0.85f, 0.85f);
         glBegin(GL_LINES);
-        for (int x = 0; x <= anchoVista; x += 20) {
+        for (int x = 0; x <= anchoViewport; x += 20) {
             glVertex2i(x, 0);
-            glVertex2i(x, altoVista);
+            glVertex2i(x, altoViewport);
         }
-        for (int y = 0; y <= altoVista; y += 20) {
+        for (int y = 0; y <= altoViewport; y += 20) {
             glVertex2i(0, y);
-            glVertex2i(anchoVista, y);
+            glVertex2i(anchoViewport, y);
         }
         glEnd();
     }
 
+    // Dibujar ejes
     if (mostrarEjes) {
         glColor3f(0.6f, 0.6f, 0.6f);
         glBegin(GL_LINES);
-        // Eje horizontal
-        glVertex2i(0, altoVista / 2);
-        glVertex2i(anchoVista, altoVista / 2);
-        // Eje vertical
-        glVertex2i(anchoVista / 2, 0);
-        glVertex2i(anchoVista / 2, altoVista);
+        glVertex2i(0, altoViewport / 2);
+        glVertex2i(anchoViewport, altoViewport / 2);
+        glVertex2i(anchoViewport / 2, 0);
+        glVertex2i(anchoViewport / 2, altoViewport);
         glEnd();
     }
 
-    // Dibujar todas las figuras almacenadas
-    for (const auto &fig : figuras) {
+    for (auto &fig : figuras) {
         dibujarFigura(fig);
     }
-
     glutSwapBuffers();
 }
 
 
+void mostrar() {
+    redibujarTodo();
+}
+
+void reajustar(int w, int h) {
+    anchoViewport = w;
+    altoViewport = h;
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, w, 0, h);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void raton(int boton, int estado, int x, int y) {
+    int ox = x;
+    int oy = altoViewport - y;
+    if (boton == GLUT_LEFT_BUTTON && estado == GLUT_DOWN) {
+        if (!esperandoSegundoClick) {
+            primerX = ox;
+            primerY = oy;
+            esperandoSegundoClick = true;
+        } else {
+            guardarParaDeshacer();
+            Figura f;
+            f.color = colorActual;
+            f.grosor = grosorActual;
+            switch (herramientaActual) {
+                case HERRAMIENTA_LINEA_DIRECTA:
+                case HERRAMIENTA_LINEA_DDA:
+                    f.tipoHerramienta = herramientaActual;
+                    f.xInicio = primerX;
+                    f.yInicio = primerY;
+                    f.xFin = ox;
+                    f.yFin = oy;
+                    break;
+                case HERRAMIENTA_CIRCULO_PUNTO_MEDIO:
+                    f.tipoHerramienta = HERRAMIENTA_CIRCULO_PUNTO_MEDIO;
+                    f.centroX = primerX;
+                    f.centroY = primerY;
+                    f.radio = round(sqrt(pow(ox - primerX, 2) + pow(oy - primerY, 2)));
+                    break;
+                case HERRAMIENTA_ELIPSE_PUNTO_MEDIO:
+                    f.tipoHerramienta = HERRAMIENTA_ELIPSE_PUNTO_MEDIO;
+                    f.centroX = primerX;
+                    f.centroY = primerY;
+                    f.radioX = abs(ox - primerX);
+                    f.radioY = abs(oy - primerY);
+                    break;
+                default:
+                    break;
+            }
+            figuras.push_back(f);
+            esperandoSegundoClick = false;
+            glutPostRedisplay();
+        }
+    }
+}
+
+void manejarMenu(int opcion) {
+    switch (opcion) {
+        case 1: herramientaActual = HERRAMIENTA_LINEA_DIRECTA; break;
+        case 2: herramientaActual = HERRAMIENTA_LINEA_DDA; break;
+        case 3: herramientaActual = HERRAMIENTA_CIRCULO_PUNTO_MEDIO; break;
+        case 4: herramientaActual = HERRAMIENTA_ELIPSE_PUNTO_MEDIO; break;
+        case 10: colorActual = {0.f, 0.f, 0.f}; break;      // Negro
+        case 11: colorActual = {1.f, 0.f, 0.f}; break;      // Rojo
+        case 12: colorActual = {0.f, 1.f, 0.f}; break;      // Verde
+        case 13: colorActual = {0.f, 0.f, 1.f}; break;      // Azul
+        case 20: grosorActual = 1; break;
+        case 21: grosorActual = 2; break;
+        case 22: grosorActual = 3; break;
+        case 23: grosorActual = 5; break;
+        case 30: mostrarCuadricula = !mostrarCuadricula; break;
+        case 31: mostrarEjes = !mostrarEjes; break;
+        case 40: guardarParaDeshacer(); figuras.clear(); break;
+        case 41: deshacer(); break;
+        case 42: rehacer(); break;
+
+    }
+    glutPostRedisplay();
+}
+
+void crearMenus() {
+    int menuDibujo = glutCreateMenu(manejarMenu);
+    glutAddMenuEntry("Línea Directa", 1);
+    glutAddMenuEntry("Línea DDA", 2);
+    glutAddMenuEntry("Círculo PM", 3);
+    glutAddMenuEntry("Elipse PM", 4);
+
+    int menuColor = glutCreateMenu(manejarMenu);
+    glutAddMenuEntry("Negro", 10);
+    glutAddMenuEntry("Rojo", 11);
+    glutAddMenuEntry("Verde", 12);
+    glutAddMenuEntry("Azul", 13);
+
+    int menuGrosor = glutCreateMenu(manejarMenu);
+    glutAddMenuEntry("1px", 20);
+    glutAddMenuEntry("2px", 21);
+    glutAddMenuEntry("3px", 22);
+    glutAddMenuEntry("5px", 23);
+
+    int menuVista = glutCreateMenu(manejarMenu);
+    glutAddMenuEntry("Mostrar/Ocultar Cuadrícula", 30);
+    glutAddMenuEntry("Mostrar/Ocultar Ejes", 31);
+
+    int menuHerramientas = glutCreateMenu(manejarMenu);
+    glutAddMenuEntry("Limpiar", 40);
+    glutAddMenuEntry("Deshacer", 41);
+    glutAddMenuEntry("Rehacer", 42);
+    glutAddMenuEntry("Exportar PPM", 43);
+
+    int menuPrincipal = glutCreateMenu(manejarMenu);
+    glutAddSubMenu("Dibujo", menuDibujo);
+    glutAddSubMenu("Color", menuColor);
+    glutAddSubMenu("Grosor", menuGrosor);
+    glutAddSubMenu("Vista", menuVista);
+    glutAddSubMenu("Herramientas", menuHerramientas);
+
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
+void inicializarGL() {
+    glClearColor(1.f, 1.f, 1.f, 1.f);
+    glPointSize(1);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, ANCHO_VENTANA, 0, ALTO_VENTANA);
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(ANCHO_VENTANA, ALTO_VENTANA);
+    glutCreateWindow("Mini CAD Raster");
+    inicializarGL();
+    crearMenus();
+    glutDisplayFunc(mostrar);
+    glutReshapeFunc(reajustar);
+    glutMouseFunc(raton);
+    glutMainLoop();
+    return 0;
+}

@@ -88,25 +88,22 @@ void dibujarPunto(int x, int y) {
 
 // Algoritmos de linea directa y DDA
 void dibujarLineaDirecta(int x0, int y0, int x1, int y1, int grosor) {
-    int dx = x1 - x0, dy = y1 - y0;
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int pasos = max(abs(dx), abs(dy));
+
+    float xInc = dx / (float) pasos;
+    float yInc = dy / (float) pasos;
+
+    float x = x0;
+    float y = y0;
+
     glPointSize(grosor);
     glBegin(GL_POINTS);
-    if (dx == 0) {
-        int pasoY = (y1 > y0) ? 1 : -1;
-        for (int y = y0; y != y1 + pasoY; y += pasoY) dibujarPunto(x0, y);
-    } else if (dy == 0) {
-        int pasoX = (x1 > x0) ? 1 : -1;
-        for (int x = x0; x != x1 + pasoX; x += pasoX) dibujarPunto(x, y0);
-    } else {
-        float m = (float) dy / dx;
-        if (fabs(m) <= 1) {
-            int pasoX = (x1 > x0) ? 1 : -1;
-            for (int x = x0; x != x1 + pasoX; x += pasoX) dibujarPunto(x, redondearAEntero(m*(x - x0) + y0));
-        } else {
-            int pasoY = (y1 > y0) ? 1 : -1;
-            float invM = (float) dx / dy;
-            for (int y = y0; y != y1 + pasoY; y += pasoY) dibujarPunto(redondearAEntero(invM*(y - y0) + x0), y);
-        }
+    for (int i = 0; i <= pasos; i++) {
+        dibujarPunto(redondearAEntero(x), redondearAEntero(y));
+        x += xInc;
+        y += yInc;
     }
     glEnd();
 }
@@ -220,3 +217,4 @@ void dibujarFigura(const Figura &f) {
 
 // Func para redibujar todo el contenido
 void redibujar
+

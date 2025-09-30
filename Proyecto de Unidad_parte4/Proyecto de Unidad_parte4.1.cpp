@@ -10,7 +10,6 @@ using namespace std;
 const int ANCHO_VENTANA = 800;
 const int ALTO_VENTANA = 600;
 
-// Tipos de dibujo disponibles
 enum Herramienta {
     HERRAMIENTA_LINEA_DIRECTA,
     HERRAMIENTA_LINEA_DDA,
@@ -19,12 +18,11 @@ enum Herramienta {
     HERRAMIENTA_NINGUNA
 };
 
-// Color RGB
+
 struct ColorRGB {
     float r, g, b;
 };
 
-// Estructura para figuras geométricas
 struct Figura {
     Herramienta tipoHerramienta;
     // Líneas: puntos inicio-fin
@@ -41,7 +39,6 @@ vector<Figura> figuras;
 stack<vector<Figura>> pilaDeshacer;
 stack<vector<Figura>> pilaRehacer;
 
-// Estado actual
 Herramienta herramientaActual = HERRAMIENTA_LINEA_DIRECTA;
 ColorRGB colorActual = {0.f, 0.f, 0.f};
 int grosorActual = 1;
@@ -81,12 +78,10 @@ void rehacer() {
     }
 }
 
-// Dibujar punto en (x,y)
 void dibujarPunto(int x, int y) {
     glVertex2i(x, y);
 }
 
-// Algoritmos línea directa y DDA
 void dibujarLineaDirecta(int x0, int y0, int x1, int y1, int grosor) {
     int dx = x1 - x0;
     int dy = y1 - y0;
@@ -124,7 +119,6 @@ void dibujarLineaDDA(int x0, int y0, int x1, int y1, int grosor) {
     glEnd();
 }
 
-// Círculo y Elipse punto medio
 void dibujarPuntosCirculo(int cx, int cy, int x, int y) {
     dibujarPunto(cx + x, cy + y);
     dibujarPunto(cx - x, cy + y);
@@ -394,3 +388,4 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
+
